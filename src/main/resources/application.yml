@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/home_services_spring
+    username: postgres
+    password: 99497
+  jpa:
+    properties:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+      show-sql: false
+  main:
+    allow-circular-references: true
