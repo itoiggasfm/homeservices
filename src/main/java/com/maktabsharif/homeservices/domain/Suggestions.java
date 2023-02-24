@@ -29,7 +29,7 @@ public class Suggestions{
     @Column(name = "start_date_by_expert")
     private Timestamp startDateByExpert;
     @Column(name = "order_do_duration")
-    private Long orderDoDuration;
+    private Integer orderDoDuration;
     @Column(name = "selected")
     private Boolean selecetd;
 

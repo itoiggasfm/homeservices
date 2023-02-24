@@ -26,16 +26,16 @@ class SuggestionsServiceTest {
 
     Suggestions suggestions = Suggestions.builder()
             .orders(Orders.builder()
-                    .id(3l)
+                    .id(1l)
                     .build())
             .user(User.builder()
-                    .id(4l)
+                    .id(1l)
                     .build())
             .expertSuggestion("ready for it")
             .expertSuggestionDate(new Timestamp(new Date().getTime()))
             .expertSuggestedPrice(3000d)
-            .startDateByExpert(Timestamp.valueOf("2023-2-21 12:00:00"))
-            .orderDoDuration(2l)
+            .startDateByExpert(Timestamp.valueOf("2023-2-24 11:53:00"))
+            .orderDoDuration(2)
             .selecetd(false)
             .build();
 

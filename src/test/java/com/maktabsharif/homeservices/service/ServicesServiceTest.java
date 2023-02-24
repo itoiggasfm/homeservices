@@ -23,9 +23,9 @@ class ServicesServiceTest {
 
     Services services = Services.builder()
             .serviceTitle("Audio Video")
-            .subserviceTitle("Radio")
+            .subserviceTitle("TV")
             .basePrice(1000d)
-            .description("new Radio")
+            .description("new TV")
             .build();
 
     @Test
@@ -86,9 +86,9 @@ class ServicesServiceTest {
         Services underEditService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
 
         String newServiceTitle = null;
-        String newSubserviceTitle = null;
+        String newSubserviceTitle = "All Tv 1";
         Double newBasePrice = 2000d;
-        String newDescription = "New radio tuned";
+        String newDescription = "New all tv";
         Services editedService = servicesService.editServices(underEditService, newServiceTitle, newSubserviceTitle, newBasePrice, newDescription);
         assertTrue(
                 (newServiceTitle != null && editedService.getServiceTitle().equals(newServiceTitle) ? true : newServiceTitle == null && editedService.getServiceTitle().equals(underEditService.getServiceTitle()) ? true : false) &&
@@ -102,7 +102,7 @@ class ServicesServiceTest {
     @Order(8)
     void addExpertToServices() {
         Services foundService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
-        User assignedToServicesExpert = servicesService.addExpertToServices(foundService.getId(), 4l);
+        User assignedToServicesExpert = servicesService.addExpertToServices(foundService.getId(), 1l);
         assertTrue((assignedToServicesExpert.getServices().stream().filter(t -> Objects.equals(t.getId(), foundService.getId())).findFirst()).isPresent());
 
     }
@@ -111,7 +111,7 @@ class ServicesServiceTest {
     @Order(9)
     void removeExpertFromServices() {
         Services foundService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
-        User RemovedFromServicesExpert = servicesService.removeExpertFromServices(foundService.getId(), 4l);
+        User RemovedFromServicesExpert = servicesService.removeExpertFromServices(foundService.getId(), 1l);
         assertTrue(!(RemovedFromServicesExpert.getServices().stream().filter(t -> Objects.equals(t.getId(), foundService.getId())).findFirst()).isPresent());
     }
 

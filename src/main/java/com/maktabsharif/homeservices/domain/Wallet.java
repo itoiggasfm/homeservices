@@ -29,7 +29,7 @@ public class Wallet{
     @LazyCollection(LazyCollectionOption.FALSE)
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.MERGE/*,
             fetch = FetchType.EAGER*/)
-    private List<Transaction> transaction;
+    private List<Transactions> transaction;
 
 
     @OneToOne(mappedBy = "wallet")

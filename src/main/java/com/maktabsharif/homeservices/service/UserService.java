@@ -1,17 +1,19 @@
 package com.maktabsharif.homeservices.service;
 import com.maktabsharif.homeservices.Exceptions.*;
-import com.maktabsharif.homeservices.domain.Services;
 import com.maktabsharif.homeservices.domain.enumeration.ExpertStatus;
 import com.maktabsharif.homeservices.domain.enumeration.UserRole;
+import com.maktabsharif.homeservices.utilities.FileUploadUtil;
 import com.maktabsharif.homeservices.validation.Validators;
 import com.maktabsharif.homeservices.domain.User;
 import com.maktabsharif.homeservices.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.view.RedirectView;
 
-import java.sql.Timestamp;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -20,7 +22,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final Validators validator;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository)
+    {
         this.userRepository = userRepository;
         this.validator = new Validators();
     }
@@ -62,10 +65,17 @@ public class UserService {
 
     public User singIn(String username, String password) {
         Optional<User> user = userRepository.findByUsername(username);
-        if( user.isPresent() && user.get().getPassword().equals(password) && (user.get().getUserRole().equals(UserRole.CLIENT) || (user.get().getUserRole().equals(UserRole.EXPERT) && user.get().getExpertStatus().equals(ExpertStatus.APPROVED)) || user.get().getUserRole().equals(UserRole.ADMIN)))
-            return user.get();
-        else
+        if(!user.isPresent())
+            throw new UserNotFoundException("User not found.");
+        if(!user.get().isActive())
+            throw new UserIsActiveException("User isn't active.");
+        if(
+               !(user.get().getPassword().equals(password)
+                && (user.get().getUserRole().equals(UserRole.CLIENT) || (user.get().getUserRole().equals(UserRole.EXPERT) && user.get().getExpertStatus().equals(ExpertStatus.APPROVED)) || user.get().getUserRole().equals(UserRole.ADMIN)))
+        )
             throw new IncorrectUsernameOrPasswordException("Incorrect username or password.");
+
+        return user.get();
     }
 
     public User updateUser(User user) {
@@ -92,15 +102,15 @@ public class UserService {
         Optional<User> foundUser = userRepository.findById(userId);
         if(!foundUser.isPresent())
             throw new UserNotFoundException("User not found.");
-            if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
-                throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-                        + " has not registered as an expert.");
-                if(foundUser.get().getExpertStatus().equals(ExpertStatus.APPROVED))
-                    throw new ApprovedExpertException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-                            + " has already been approved as expert.");
+        if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
+            throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+                    + " has not registered as an expert.");
+        if(foundUser.get().getExpertStatus().equals(ExpertStatus.APPROVED))
+            throw new ApprovedExpertException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+                    + " has already been approved as expert.");
 
-                foundUser.get().setExpertStatus(ExpertStatus.APPROVED);
-                 return userRepository.save(foundUser.get());
+        foundUser.get().setExpertStatus(ExpertStatus.APPROVED);
+         return userRepository.save(foundUser.get());
     }
 
     public List<User> findAll() {
@@ -176,5 +186,76 @@ public class UserService {
 //
 //        return userRepository.save(foundUser.get());
 //    }
+
+
+    public List<User> searchForClientOrExpert(UserRole userRole){
+        List<User> users = userRepository.findAllByUserRoleIs(userRole);
+        if(users.isEmpty())
+            throw new NoUserFoundException("No user found.");
+        return users;
+    }
+
+    public List<User> searchForName(String name){
+        List<User> users = userRepository.findAllByNameContaining(name);
+        if(users.isEmpty())
+            throw new NoUserFoundException("No user found.");
+        return users;
+    }
+
+    public List<User> searchForFamilyName(String familyName){
+        List<User> users = userRepository.findAllByFamilyNameContaining(familyName);
+        if(users.isEmpty())
+            throw new NoUserFoundException("No user found.");
+        return users;
+    }
+
+    public List<User> searchForEmail(String email){
+        List<User> users = userRepository.findAllByEmailContaining(email);
+        if(users.isEmpty())
+            throw new NoUserFoundException("No user found.");
+        return users;
+    }
+
+    public List<User> searchForExpertPoint(Integer minPoint, Integer maxPoint){
+        List<User> users = userRepository.findAllByExpertPointBetween(minPoint, maxPoint);
+        if(users.isEmpty())
+            throw new NoUserFoundException("No user found.");
+        return users;
+    }
+
+    public List<User> searchForExpertise(String expertise){
+        List<User> users = userRepository.findAll();
+        if(users.isEmpty())
+            throw new UserNotFoundException("User not found.");
+
+        List<User> usersHavingExpertise = users.stream()
+                .filter(u -> u.getServices().stream()
+                                .anyMatch(us -> (us.getServiceTitle().toLowerCase().contains(expertise.toLowerCase())
+                                        || us.getSubserviceTitle().toLowerCase().contains(expertise.toLowerCase())))
+                        ).collect(Collectors.toList());
+        if(usersHavingExpertise.isEmpty())
+            throw new NoUserFoundException("No user found.");
+
+        return usersHavingExpertise;
+    }
+
+    public void photo(Long userId, MultipartFile imageFile) throws Exception {
+        if(imageFile.isEmpty())
+            throw new NoFileUploadedException("No file uploaded.");
+        if(imageFile.getSize()/1024 > 300)
+            throw new LargeImmageFileException("Image file is greater than 300 KB.");
+        if(validator.validateImageExtension(imageFile.getOriginalFilename()))
+            throw new IncorrectImageFileExtensionException("Image file is not of jpg format.");
+
+        String fileName = StringUtils.cleanPath(imageFile.getOriginalFilename());
+        Optional<User> user = userRepository.findById(userId);
+        user.get().setProfilePhotoName(fileName);
+        userRepository.save(user.get());
+
+        String uploadDir = "user-photos/" + userId;
+
+        FileUploadUtil.saveFile(uploadDir, fileName, imageFile);
+
+    }
 
 }

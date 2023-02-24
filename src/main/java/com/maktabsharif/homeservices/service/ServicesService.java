@@ -38,7 +38,7 @@ public class ServicesService {
             return servicesRepository.save(services);
         }
         else{
-            Optional<Services> foundSubservice = servicesRepository.findByServiceTitleAndAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
+            Optional<Services> foundSubservice = servicesRepository.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
             if(foundSubservice.isPresent())
                 throw new DuplicateSubserviceTitleException(services.getSubserviceTitle() +
                         " already exists as a subcategory of service " +
@@ -63,7 +63,7 @@ public class ServicesService {
     }
 
     public Services findByServiceTitleAndSubserviceTitle(String serviceTitle, String subserviceTitle){
-        return servicesRepository.findByServiceTitleAndAndSubserviceTitle(serviceTitle, subserviceTitle).
+        return servicesRepository.findByServiceTitleAndSubserviceTitle(serviceTitle, subserviceTitle).
                 orElseThrow(() -> new ServicesNotFoundException("Service not found."));
     }
 
@@ -83,7 +83,7 @@ public class ServicesService {
     }
 
     public Services editServices(Services underEditServices, String newServiceTitle, String newSubserviceTitle, Double newBasePrice, String newDescription){
-        Optional<Services> foundService = servicesRepository.findByServiceTitleAndAndSubserviceTitle(underEditServices.getServiceTitle(), underEditServices.getSubserviceTitle());
+        Optional<Services> foundService = servicesRepository.findByServiceTitleAndSubserviceTitle(underEditServices.getServiceTitle(), underEditServices.getSubserviceTitle());
         if(foundService.isPresent()){
             if(foundService.get().getSubserviceTitle() == null){
                 if(newServiceTitle != null)

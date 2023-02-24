@@ -1,6 +1,7 @@
 package com.maktabsharif.homeservices.domain;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.maktabsharif.homeservices.domain.enumeration.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,8 +30,10 @@ public class Orders {
     @Column(name = "client_suggested_price")
     private Double clientSuggestedPrice;
     @Column(name = "order_date")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss"/*, timezone = "Asia/Tehran"*/)
     private Timestamp orderDate;
     @Column(name = "start_date_by_client")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss"/*, timezone = "Asia/Tehran"*/)
     private Timestamp startDateByClient;
     @Column(name = "address")
     private String address;

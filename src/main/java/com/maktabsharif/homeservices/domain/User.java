@@ -43,11 +43,15 @@ public class User {
 
     @Column(name = "expert_status")
     private ExpertStatus expertStatus;
+
     @Column(name = "expert_point")
     private Integer expertPoint;
 
-    @Column(name = "profile_photo_path")
-    private String profilePhotoPath;
+    @Column(name = "profile_photo_name")
+    private String profilePhotoName;
+
+    @Column(name = "active", columnDefinition = "boolean default true")
+    private boolean active;
 
     @LazyCollection(LazyCollectionOption.FALSE)
     @ManyToMany/*(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)*/

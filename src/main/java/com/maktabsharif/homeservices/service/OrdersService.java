@@ -3,7 +3,7 @@ package com.maktabsharif.homeservices.service;
 import com.maktabsharif.homeservices.Exceptions.*;
 import com.maktabsharif.homeservices.domain.*;
 import com.maktabsharif.homeservices.domain.enumeration.OrderStatus;
-import com.maktabsharif.homeservices.repository.OrderRepository;
+import com.maktabsharif.homeservices.repository.OrdersRepository;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -13,23 +13,29 @@ import java.util.stream.Collectors;
 @Service
 public class OrdersService {
 
-    private final OrderRepository orderRepository;
+    private final OrdersRepository ordersRepository;
     private final ServicesService servicesService;
     private final UserService userService;
     private final SuggestionsService suggestionsService;
+    private final TransactionsService transactionsService;
+    private final WalletService walletService;
 
-    public OrdersService(OrderRepository orderRepository,
+    public OrdersService(OrdersRepository ordersRepository,
                          ServicesService servicesService,
                          UserService userService,
-                         SuggestionsService suggestionsService) {
-        this.orderRepository = orderRepository;
+                         SuggestionsService suggestionsService,
+                         TransactionsService transactionsService,
+                         WalletService walletService) {
+        this.ordersRepository = ordersRepository;
         this.servicesService = servicesService;
         this.userService = userService;
         this.suggestionsService = suggestionsService;
+        this.transactionsService = transactionsService;
+        this.walletService = walletService;
     }
 
-    public void create(Orders order) throws Exception{
-        Optional<Orders> foundOrder = orderRepository.findByUserAndServices(order.getUser(), order.getServices());
+    public Orders create(Orders order) throws Exception{
+        Optional<Orders> foundOrder = ordersRepository.findByUserAndServices(order.getUser(), order.getServices());
 
         if(foundOrder.isPresent())
             throw new DuplicateOrderException("Order already registered.");
@@ -39,29 +45,29 @@ public class OrdersService {
             throw new StartDateByClientBeforeNowException("Start date is before now.");
 
         order.setUser(userService.findById(order.getUser().getId()));
-        orderRepository.save(order);
+        return ordersRepository.save(order);
     }
 
 
     public Orders findById(Long id) throws Exception{
-        return orderRepository.findById(id)
+        return ordersRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found."));
     }
 
 
     public List<Orders> findAll(){
-        return orderRepository.findAll();
+        return ordersRepository.findAll();
     }
 
     public Orders findByUserAndServices(User orderUser, Services orderServices) throws Exception{
-        return orderRepository.findByUserAndServices(orderUser, orderServices)
+        return ordersRepository.findByUserAndServices(orderUser, orderServices)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found."));
     }
 
 
     public List<Orders> findClientOrders  (Long clientId) throws Exception{
 
-        List<Orders> orders = orderRepository.findAll();
+        List<Orders> orders = ordersRepository.findAll();
         if(orders.isEmpty())
             throw new OrderNotFoundException("Order not found");
 
@@ -77,7 +83,7 @@ public class OrdersService {
 
 
     public List<Orders> findRelatedToExpertOrders(List<Services> expertServices){
-        List<Orders> orders = orderRepository.findAll();
+        List<Orders> orders = ordersRepository.findAll();
         if(orders.isEmpty())
             throw new OrderNotFoundException("Order not found");
 
@@ -95,7 +101,7 @@ public class OrdersService {
 
 
     public List<Orders> findSuggestibleByExpertOrders(List<Services> expertServices){
-        List<Orders> orders = orderRepository.findAll();
+        List<Orders> orders = ordersRepository.findAll();
         if(orders.isEmpty())
             throw new OrderNotFoundException("Order not found");
 
@@ -114,7 +120,7 @@ public class OrdersService {
 
 
     public List<Orders> findAssignedToExpertOrders(Long expertId){
-        List<Orders> orders = orderRepository.findAll();
+        List<Orders> orders = ordersRepository.findAll();
         if(orders.isEmpty())
             throw new OrderNotFoundException("Order not found");
 
@@ -131,11 +137,11 @@ public class OrdersService {
     }
 
     public Orders updateByOrder(Orders order){
-        return orderRepository.save(order);
+        return ordersRepository.save(order);
     }
 
-    public void changeOrderStatusToStarted(Long orderId){
-        Orders order = orderRepository.findById(orderId)
+    public Orders changeOrderStatusToStarted(Long orderId){
+        Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found."));
 
         if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERTS_SUGGESTION))
@@ -147,18 +153,18 @@ public class OrdersService {
                         .getStartDateByExpert().after(new Timestamp(new Date().getTime())))
             throw new NotExpertHasComeToYpurPlaceYetException("It's not time yet foe expert to come to your place and the order can't be started.");
         if(order.getOrderStatus().equals(OrderStatus.STARTED))
-            throw new AlreadyStartedOrder("Order is already started.");
+            throw new AlreadyStartedOrderException("Order is already started.");
         if(order.getOrderStatus().equals(OrderStatus.DONE))
-            throw new AlreadyDoneOrder("Order is already done.");
+            throw new AlreadyDoneOrderException("Order is already done.");
         if(order.getOrderStatus().equals(OrderStatus.PAID))
-            throw new AlreadyStartedOrder("Order is already paid.");
+            throw new AlreadyStartedOrderException("Order is already paid.");
 
         order.setOrderStatus(OrderStatus.STARTED);
-        orderRepository.save(order);
+        return ordersRepository.save(order);
     }
 
-    public void changeOrderStatusToDone(Long orderId){
-        Orders order = orderRepository.findById(orderId)
+    public Orders changeOrderStatusToDone(Long orderId){
+        Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found."));
 
         if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERTS_SUGGESTION))
@@ -172,18 +178,74 @@ public class OrdersService {
         if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERT_TO_COME_TO_YOUR_PLACE) &&
                 suggestionsService.findById(order.getSelectedSuggestionId())
                         .getStartDateByExpert().before(new Timestamp(new Date().getTime())))
-            throw new NotStartedOrderYet("Order isn't started yet.");
+            throw new NotStartedOrderYetException("Order isn't started yet.");
         if(order.getOrderStatus().equals(OrderStatus.DONE))
-            throw new AlreadyStartedOrder("Order is already done.");
+            throw new AlreadyStartedOrderException("Order is already done.");
         if(order.getOrderStatus().equals(OrderStatus.PAID))
-            throw new AlreadyPaidOrder("Order is already paid.");
+            throw new AlreadyPaidOrderException("Order is already paid.");
+
+        Suggestions selectedSuggestion = suggestionsService.findById(ordersRepository.findById(orderId).get().getSelectedSuggestionId());
+        User user = selectedSuggestion.getUser();
+
+        Timestamp startDateByExpert = selectedSuggestion.getStartDateByExpert();
+        Timestamp now = new Timestamp(new Date().getTime());
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(startDateByExpert.getTime());
+        cal.setTimeInMillis(now.getTime());
+        int diffInHours = (int) (now.getTime() - startDateByExpert.getTime())/3600000;
+        int orderDoDurationHours = selectedSuggestion.getOrderDoDuration();
+        if(diffInHours > orderDoDurationHours){
+            user.setExpertPoint(orderDoDurationHours - diffInHours);
+            user.setActive(false);
+            userService.updateUser(user);
+        }
 
         order.setOrderStatus(OrderStatus.DONE);
-        orderRepository.save(order);
+         return ordersRepository.save(order);
     }
 
-    public void changeOrderStatusToPaid(Long orderId){
-        Orders order = orderRepository.findById(orderId)
+    public void changeOrderStatusToPaidByCredit(Long orderId){
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found."));
+        Suggestions selectedSuggestion = suggestionsService.findById(order.getSelectedSuggestionId());
+
+        if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERTS_SUGGESTION))
+            throw new NotExpertsSuggestedYetException("No expert suggested on order yet and the order status can't be changed to paid.");
+        if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERT_SELECTION))
+            throw new NotExpertSelectedYetException("No expert selected for order yet and the order status can't be changed to paid.");
+        if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERT_TO_COME_TO_YOUR_PLACE) &&
+                selectedSuggestion.getStartDateByExpert().after(new Timestamp(new Date().getTime())))
+            throw new NotExpertHasComeToYpurPlaceYetException("It's not time yet foe expert to come to your place and the order status can't be changed to paid.");
+        if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERT_TO_COME_TO_YOUR_PLACE) &&
+                selectedSuggestion.getStartDateByExpert().before(new Timestamp(new Date().getTime())))
+            throw new NotStartedOrderYetException("Order isn't started yet.");
+        if(order.getOrderStatus().equals(OrderStatus.STARTED))
+            throw new AlreadyStartedOrderException("Order isn't done yet.");
+        if(order.getOrderStatus().equals(OrderStatus.PAID))
+            throw new AlreadyPaidOrderException("Order is already paid.");
+
+        Transactions clientTransactions = new Transactions();
+        clientTransactions.setTransactionAmount(-selectedSuggestion.getExpertSuggestedPrice());
+        clientTransactions.setTransactionDate(new Timestamp(new Date().getTime()));
+        clientTransactions.setSrcCardNo("wallet ID: " + order.getUser().getWallet().getId());
+        clientTransactions.setDestCardNo("wallet ID: " + selectedSuggestion.getUser().getWallet().getId());
+        clientTransactions.setWallet(order.getUser().getWallet());
+       transactionsService.createByCredit(clientTransactions);
+
+        Transactions expertTransactions = new Transactions();
+        expertTransactions.setTransactionAmount(selectedSuggestion.getExpertSuggestedPrice()*7/10);
+        expertTransactions.setTransactionDate(new Timestamp(new Date().getTime()));
+        expertTransactions.setSrcCardNo("wallet ID: " + order.getUser().getWallet().getId());
+        expertTransactions.setDestCardNo("wallet ID: " + selectedSuggestion.getUser().getWallet().getId());
+        expertTransactions.setWallet(selectedSuggestion.getUser().getWallet());
+       transactionsService.createByCredit(expertTransactions);
+
+        order.setOrderStatus(OrderStatus.PAID);
+        ordersRepository.save(order);
+    }
+
+    public void changeOrderStatusToPaidByCard(Long orderId){
+        Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found."));
 
         if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERTS_SUGGESTION))
@@ -197,14 +259,14 @@ public class OrdersService {
         if(order.getOrderStatus().equals(OrderStatus.AWAITING_EXPERT_TO_COME_TO_YOUR_PLACE) &&
                 suggestionsService.findById(order.getSelectedSuggestionId())
                         .getStartDateByExpert().before(new Timestamp(new Date().getTime())))
-            throw new NotStartedOrderYet("Order isn't started yet.");
+            throw new NotStartedOrderYetException("Order isn't started yet.");
         if(order.getOrderStatus().equals(OrderStatus.STARTED))
-            throw new AlreadyStartedOrder("Order isn't done yet.");
+            throw new AlreadyStartedOrderException("Order isn't done yet.");
         if(order.getOrderStatus().equals(OrderStatus.PAID))
-            throw new AlreadyPaidOrder("Order is already paid.");
+            throw new AlreadyPaidOrderException("Order is already paid.");
 
         order.setOrderStatus(OrderStatus.PAID);
-        orderRepository.save(order);
+        ordersRepository.save(order);
     }
 
 

@@ -24,15 +24,18 @@ class UserServiceTest {
     private UserService userService;
 
     User user = User.builder()
-            .name("client")
-            .familyName("1")
-            .username("0011111112")
+            .name("Ahmad")
+            .familyName("Ahmadi")
+            .username("0011111111")
             .password("Aa123456")
-            .email("c1@live.com")
-            .userRole(UserRole.CLIENT)
+            .email("aahmadi@live.com")
+            .userRole(UserRole.EXPERT)
+            .expertPoint(3)
+            .expertStatus(ExpertStatus.NEW)
             .registerDate(new Timestamp(new Date().getTime()))
+            .active(true)
             .wallet(Wallet.builder()
-                    .balance(0d).build())
+                    .balance(10000d).build())
             .build();
 
 
@@ -92,12 +95,53 @@ class UserServiceTest {
 
 
     @Test
-    @Order(8)
+    @Order(14)
     void deleteById() {
         User foundUser = userService.findByUsername(user.getUsername());
         userService.deleteById(foundUser.getId());
         List<User> users = userService.findAll();
         assertEquals(users.size(), 0);
+    }
+
+    @Order(8)
+    @Test
+    void searchForClientOrExpert() {
+        List<User> users = userService.searchForClientOrExpert(UserRole.EXPERT);
+        assertEquals(users.size(), 1);
+    }
+
+    @Order(9)
+    @Test
+    void searchForName() {
+        List<User> users = userService.searchForName("mad");
+        assertEquals(users.size(), 1);
+    }
+
+    @Order(10)
+    @Test
+    void searchForFamilyName() {
+        List<User> users = userService.searchForName("mad");
+        assertEquals(users.size(), 1);
+    }
+
+    @Order(11)
+    @Test
+    void searchForEmail() {
+        List<User> users = userService.searchForEmail("mad");
+        assertEquals(users.size(), 1);
+    }
+
+    @Order(12)
+    @Test
+    void searchForExpertPoint() {
+        List<User> users = userService.searchForExpertPoint(1, 5);
+        assertEquals(users.size(), 1);
+    }
+
+    @Order(13)
+    @Test
+    @Disabled
+    void searchForExpertise() {
     }
 
 //    @Test
