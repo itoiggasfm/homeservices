@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:form="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment info</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <style>
+
+    </style>
+</head>
+<body class="bg-secondary">
+<main class="container bg-warning-subtle rounded-3 p-3 mt-5 col-4">
+
+    <div>
+    <p id="demo" style="color: red; font-size: x-large; font-family: 'Arial Black';"></p>
+    </div>
+
+    <div class="" align="center">
+        <p style="height: 40px; color: darkblue; font-family: 'Arial Black'; font-size: 30px ">Payment info</p>
+    </div>
+    <form>
+        <div class="mb-4">
+            <label path="srcCardNumber" for="srcCardNumber" class="form-label"><h6>Source card No:</h6></label>
+            <input path="srcCardNumber" type="text" class="form-control" id="srcCardNumber" placeholder="Source card No" style="width: 50%">
+        </div>
+        <div class="mb-4">
+            <label for="destCardNumber" class="form-label"><h6>Destination card No:</h6></label>
+            <input type="text" class="form-control" id="destCardNumber" placeholder="Destination card No" style="width: 50%">
+        </div>
+        <div class="mb-4">
+            <label for="transactionAmount" class="form-label"><h6>Amount:</h6></label>
+            <input type="number" class="form-control" id="transactionAmount" placeholder="Transaction amount" style="width: 50%">
+        </div>
+        <div>
+            <P><h6>Expiration date:</h6></P>
+        </div>
+        <div class="mb-4">
+<!--            <label for="expYear" class="form-label"><h6>Year:</h6></label>-->
+            <input type="text" class="form-control" id="expYear" placeholder="Year" style="width: 150px">
+<!--                <label for="expMonth" class="form-label"><h6>Month:</h6></label>-->
+            <input type="text" class="form-control" id="expMonth" placeholder="Month" style="width: 150px">
+        </div>
+        <div>
+            <div id="left" class="mb-4" style="width: 50%; float: left">
+                <label for="cvv2" class="form-label"><h6>CVV2:</h6></label>
+                <input type="text" class="form-control" id="cvv2" placeholder="CVV2" style="width: 150px">
+            </div>
+            <div id="right" class="mb-4" style="width: 50%; float: right">
+                <label for="secPin" class="form-label"><h6>2nd PIN:</h6></label>
+                <input type="text" class="form-control" id="secPin" placeholder="2nd PIN" style="width: 150px">
+            </div>
+        </div>
+        <div>
+            <label for="cvv2EdSaved" >
+                <input type="checkbox" id="cvv2EdSaved" name="cvv2EdSaved"> Save CVV2 and expiration date in payment system
+            </label>
+        </div>
+        <br>
+        <p><h6>Security code:</h6></p>
+        <div>
+            <div class="mb-4" style="width: 50%; float: left">
+                <div class="mb-4" style="width: 50%; float: left">
+                    <iframe id="captcha" src="http://localhost:8080/transactions/captcha" title="Security PIN" width="100" height="100" ></iframe>
+                </div>
+                <div class="mb-4" style="width: 50%; float: right">
+                    <a href="javascript:refresh_captcha()"><img src="refresh.png"></a>
+                </div>
+            </div>
+            <div class="mb-4" style="width: 50%; float: right">
+<!--                <label for="secCode" class="form-label"></label>-->
+                <input type="text" class="form-control" id="cltCaptcha" placeholder="Security code" style="width: 50%">
+            </div>
+        </div>
+        <div class="mb-4" align="center">
+            <button class="btn btn-primary" id="paymentBtn" >Submit</button>
+        </div>
+    </form>
+</main>
+</body>
+
+<script>
+    refr_no = 0;
+    function refresh_captcha()
+    {
+        im = document.getElementById('captcha');
+        refr_no = refr_no + 1;
+        im.src="http://localhost:8080/transactions/captcha";
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-3.6.3.slim.js"
+        integrity="sha256-DKU1CmJ8kBuEwumaLuh9Tl/6ZB6jzGOBV/5YpNE2BWc="
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.4.14/sweetalert2.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+<script>
+
+    $("#paymentBtn").on('click', (e) => {
+        e.preventDefault();
+        const srcCardNumber = document.getElementById('srcCardNumber').value;
+        const destCardNumber = document.getElementById('destCardNumber').value;
+        const transactionAmount = document.getElementById('transactionAmount').value;
+        const expYear = document.getElementById('expYear').value;
+        const expMonth = document.getElementById('expMonth').value;
+        const cvv2 = document.getElementById('cvv2').value;
+        const secPin = document.getElementById('secPin').value;
+        const cltCaptcha = document.getElementById('cltCaptcha').value;
+        const cvv2EdSaved = document.getElementById('cvv2EdSaved');
+
+        const form = new FormData();
+        form.append('srcCardNumber', srcCardNumber);
+        form.append('destCardNumber', destCardNumber);
+        form.append('transactionAmount', transactionAmount);
+        form.append('expYear', expYear);
+        form.append('expMonth', expMonth);
+        form.append('cvv2', cvv2);
+        form.append('secPin', secPin);
+        form.append('cltCaptcha', cltCaptcha);
+        if(cvv2EdSaved.checked == true){
+            form.append('cvv2EdSaved', "yes");
+        }
+        else{
+            form.append('cvv2EdSaved', "no");
+        }
+
+
+
+        $.ajax({
+            type: "POST",
+            url: "http://localhost:8080/transactions/create",
+            data: form,
+            processData: false,
+            contentType: false,
+            dataType: "text",
+            success: function (response) {
+                alert(response.value)
+            },
+            error: function (response) {
+                alert(response.value)
+            }
+        })
+    })
+
+</script>
+
+<SCRIPT>
+    setTimeout("self.close()", 595000 ) // after 605 seconds
+</SCRIPT>
+
+<script>
+    // Set the date we're counting down to
+    var countDownDate = new Date().getTime() + 600000;
+
+    // Update the count down every 1 second
+    var x = setInterval(function() {
+
+        // Get today's date and time
+        var now = new Date().getTime();
+
+        // Find the distance between now and the count down date
+        var distance = countDownDate - now;
+
+        // Time calculations for days, hours, minutes and seconds
+
+        var minutes = Math.floor(distance / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Output the result in an element with id="demo"
+        document.getElementById("demo").innerHTML =  minutes + ":" + seconds ;
+
+        // If the count down is over, write some text
+        if (distance < 0) {
+            clearInterval(x);
+            document.getElementById("demo").innerHTML = "EXPIRED";
+        }
+    }, 1000);
+</script>
+
+</html>
