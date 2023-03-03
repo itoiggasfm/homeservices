@@ -4,8 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Order is already paid.")
-public class AlreadyPaidOrder extends RuntimeException{
-    public AlreadyPaidOrder(String message) {
+public class AlreadyPaidOrderException extends RuntimeException{
+    public AlreadyPaidOrderException(String message) {
         super(message);
     }
 }

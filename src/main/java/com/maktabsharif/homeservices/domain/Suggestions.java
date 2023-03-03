@@ -31,7 +31,7 @@ public class Suggestions{
     @Column(name = "order_do_duration")
     private Integer orderDoDuration;
     @Column(name = "selected")
-    private Boolean selecetd;
+    private Boolean selected;
 
     @ManyToOne (cascade = CascadeType.MERGE/*, fetch = FetchType.LAZY*/)
     private User user;

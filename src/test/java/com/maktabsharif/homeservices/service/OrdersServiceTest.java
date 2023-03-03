@@ -1,14 +1,13 @@
 package com.maktabsharif.homeservices.service;
 
 import com.maktabsharif.homeservices.domain.Orders;
-import com.maktabsharif.homeservices.domain.Services;
+import com.maktabsharif.homeservices.domain.Subservices;
 import com.maktabsharif.homeservices.domain.User;
 import com.maktabsharif.homeservices.domain.enumeration.OrderStatus;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -29,8 +28,8 @@ class OrdersServiceTest {
 
 
     Orders order = Orders.builder()
-            .orderDate(new Timestamp(new Date().getTime()))
-            .services(Services.builder()
+//            .orderDate(new Timestamp(new Date().getTime()))
+            .subservices(Subservices.builder()
                     .id(1l)
                     .build())
             .user(User.builder()
@@ -39,8 +38,8 @@ class OrdersServiceTest {
             .workDescription("New Radio")
             .address("Tehran - Beheshti Ave.")
             .clientSuggestedPrice(2000d)
-            .startDateByClient(Timestamp.valueOf("2023-2-24 11:46:00"))
-            .orderStatus(OrderStatus.AWAITING_EXPERTS_SUGGESTION)
+            .startDateByClient(Timestamp.valueOf("2023-3-24 11:46:00"))
+//            .orderStatus(OrderStatus.AWAITING_EXPERTS_SUGGESTION)
             .build();
 
 
@@ -49,7 +48,7 @@ class OrdersServiceTest {
     void create() throws Exception {
         ordersService.create(order);
 
-        Orders foundOrder = ordersService.findByUserAndServices(order.getUser(), order.getServices());
+        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
 
         assertNotNull(foundOrder);
     }
@@ -57,15 +56,15 @@ class OrdersServiceTest {
 
     @Test
     @Order(2)
-    void findByUserAndServices() throws Exception {
-        Orders foundOrder = ordersService.findByUserAndServices(order.getUser(), order.getServices());
+    void findByUserIdAndServicesId() throws Exception {
+        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
         assertNotNull(foundOrder);
     }
 
     @Test
     @Order(3)
     void findById() throws Exception {
-        Orders foundOrderByUserAndServices = ordersService.findByUserAndServices(order.getUser(), order.getServices());
+        Orders foundOrderByUserAndServices = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
         Orders foundOrderById = ordersService.findById(foundOrderByUserAndServices.getId());
         assertNotNull(foundOrderById);
     }
@@ -74,13 +73,13 @@ class OrdersServiceTest {
     @Order(4)
     void findAll() throws Exception {
         List<Orders> orders = ordersService.findAll();
-        assertEquals(orders.size(),  2);
+        assertEquals(orders.size(),  1);
     }
 
     @Test
     @Order(5)
     void findClientOrders() throws Exception {
-        Orders foundOrder = ordersService.findByUserAndServices(order.getUser(), order.getServices());
+        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
         List<Orders> clientOrders = ordersService.findClientOrders(foundOrder.getUser().getId());
         assertEquals(clientOrders.size(),  1);
 
@@ -90,7 +89,7 @@ class OrdersServiceTest {
     @Order(6)
     void findRelatedToExpertOrders() {
         User expert = userService.findById(1l);
-        List<Orders> relatedToExpertOrders = ordersService.findRelatedToExpertOrders(expert.getServices());
+        List<Orders> relatedToExpertOrders = ordersService.findRelatedToExpertOrders(expert.getSubservices());
         assertEquals(relatedToExpertOrders.size(),  1);
     }
 
@@ -98,32 +97,44 @@ class OrdersServiceTest {
     @Test
     @Order(7)
     void findSuggestibleByExpertOrders() {
-        User expert = userService.findById(4l);
-        List<Orders> suggestibleByExpertOrders = ordersService.findSuggestibleByExpertOrders(expert.getServices());
-        assertEquals(suggestibleByExpertOrders.size(),  2);
+        User expert = userService.findById(1l);
+        List<Orders> suggestibleByExpertOrders = ordersService.findSuggestibleByExpertOrders(expert.getSubservices());
+        assertEquals(suggestibleByExpertOrders.size(),  1);
     }
 
     @Test
+    @Order(8)
+    void findAssignedToExpertOrders() {
+        List<Orders> assignedToExpertOrders = ordersService.findAssignedToExpertOrders(1l);
+        assertEquals(assignedToExpertOrders.size(), 1);
+    }
+
+    @Test
+    @Order(9)
     void changeOrderStatusToStarted() throws Exception {
-        Orders foundOrder = ordersService.findByUserAndServices(order.getUser(), order.getServices());
+        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
         Orders changedOrderStatusToStarted = ordersService.changeOrderStatusToStarted(foundOrder.getId());
         assertTrue(changedOrderStatusToStarted.getOrderStatus().equals(OrderStatus.STARTED));
     }
 
     @Test
+    @Order(10)
     void changeOrderStatusToDone() throws Exception {
-        Orders foundOrder = ordersService.findByUserAndServices(order.getUser(), order.getServices());
-        Orders changedOrderStatusToDone = ordersService.changeOrderStatusToStarted(foundOrder.getId());
+        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders changedOrderStatusToDone = ordersService.changeOrderStatusToDone(foundOrder.getId());
         assertTrue(changedOrderStatusToDone.getOrderStatus().equals(OrderStatus.DONE));
 
     }
 
     @Test
+    @Order(11)
     void changeOrderStatusToPaid() throws Exception {
-        Orders foundOrder = ordersService.findByUserAndServices(order.getUser(), order.getServices());
-        Orders changedOrderStatusToPiad = ordersService.changeOrderStatusToStarted(foundOrder.getId());
+        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders changedOrderStatusToPiad = ordersService.changeOrderStatusToPaidByCredit(foundOrder.getId());
         assertTrue(changedOrderStatusToPiad.getOrderStatus().equals(OrderStatus.PAID));
     }
+
+
 
 
 }

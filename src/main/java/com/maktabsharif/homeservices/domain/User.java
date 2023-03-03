@@ -32,8 +32,10 @@ public class User {
     private String username;
     @Column(name = "password", nullable = false)
     private String password;
-    @Column(name = "email", unique = true, nullable = false)
+    @Column(name = "email", unique = true)
     private String email;
+    @Column(name = "tempEmail")
+    private String tempEmail;
     @Column(name = "register_date")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss"/*, timezone = "Asia/Tehran"*/)
     private Timestamp registerDate;
@@ -50,7 +52,7 @@ public class User {
     @Column(name = "profile_photo_name")
     private String profilePhotoName;
 
-    @Column(name = "active", columnDefinition = "boolean default true")
+    @Column(name = "active", columnDefinition = "boolean default false")
     private boolean active;
 
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -59,7 +61,7 @@ public class User {
             name = "user_services",
             joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
             inverseJoinColumns = {@JoinColumn(name = "services_id", referencedColumnName = "id")})
-    private List<Services> services;
+    private List<Subservices> subservices;
 
     @OneToOne(cascade = CascadeType.ALL/*, fetch = FetchType.EAGER*/)
     @JoinColumn(name = "wallet_id", referencedColumnName = "id")

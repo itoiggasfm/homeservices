@@ -1,5 +1,6 @@
 package com.maktabsharif.homeservices.service;
 import com.maktabsharif.homeservices.Exceptions.*;
+import com.maktabsharif.homeservices.domain.Subservices;
 import com.maktabsharif.homeservices.domain.enumeration.ExpertStatus;
 import com.maktabsharif.homeservices.domain.enumeration.UserRole;
 import com.maktabsharif.homeservices.utilities.FileUploadUtil;
@@ -9,9 +10,11 @@ import com.maktabsharif.homeservices.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.view.RedirectView;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -20,11 +23,13 @@ public class UserService {
 
 
     private final UserRepository userRepository;
+    private final SubservicesService subservicesService;
     private final Validators validator;
 
-    public UserService(UserRepository userRepository)
+    public UserService(UserRepository userRepository, SubservicesService subservicesService)
     {
         this.userRepository = userRepository;
+        this.subservicesService = subservicesService;
         this.validator = new Validators();
     }
 
@@ -40,17 +45,29 @@ public class UserService {
             throw new PasswordPolicyException("Password does not meet the password policy requirement." +
                     "Password must contain at least 8 characters including letters and numbers.");
 
-         boolean existByEmail = userRepository.existsByEmail(user.getEmail());
-        if(existByEmail)
-            throw new DuplicateEmailException("Email already exists.");
-
         if(!validator.validateEmail(user.getEmail()))
             throw new InvalidEmailException("Invalid Email address");
 
-//        user.setRegisterDate(Timestamp.valueOf("registerDte"));
+        if(userRepository.existsByEmail(user.getEmail()))
+            throw new DuplicateEmailException("Email already exists.");
 
-       return userRepository.save(user);
+        user.setRegisterDate(new Timestamp(new Date().getTime()));
+        user.setActive(false);
+        if (user.getUserRole().equals(UserRole.EXPERT)){
+            user.setExpertStatus(ExpertStatus.NEW);
+            user.setExpertPoint(0);
+        }
+        user.setTempEmail(user.getEmail());
+        user.setEmail(null);
 
+        return userRepository.save(user);
+//       afterCreate(userRepository.save(user));
+
+    }
+
+    public void afterCreate(User user){
+        //todo -displays registered user that an account activation email was sent to his/her email.
+        //todo -SEND EMAIL TO --user email-- containing a link(http://localhost:8080/user/activateAccount/user.getId() to activate his/her account with his/her id
     }
 
     public User findById(Long id){
@@ -78,7 +95,7 @@ public class UserService {
         return user.get();
     }
 
-    public User updateUser(User user) {
+    public User update(User user) {
         return userRepository.save(user);
     }
 
@@ -100,8 +117,11 @@ public class UserService {
 
     public User approveNewExperts(Long userId) {
         Optional<User> foundUser = userRepository.findById(userId);
+//        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found."));
         if(!foundUser.isPresent())
             throw new UserNotFoundException("User not found.");
+        if(!foundUser.get().isActive())
+            throw new NotActivatedUserException("User not activated.");
         if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
             throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
                     + " has not registered as an expert.");
@@ -125,67 +145,67 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
-//    public User addExpertToServices(User user, Long servicesId){
-//        Optional<User> foundUser = userRepository.findByUsername(user.getUsername());
-//        if(foundUser.isEmpty())
-//            throw new UserNotFoundException("User not found.");
-//        if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
-//                throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-//                        + " has not registered as an expert.");
-//        if(!foundUser.get().getExpertStatus().equals(ExpertStatus.APPROVED))
-//                    throw new NotApprovedExpertException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-//                            + " has not been approved as expert."
-//                    );
-//        List<Services> servicesList = servicesService.findAll();
-//        List<Services> foundUserServices = foundUser.get().getServices();
-//        if(!(servicesList.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
-//            throw new ServicesNotFoundException("Service with ID " +
-//                    servicesId +
-//                    " not found."
-//                        );
-//
-//        if((foundUserServices.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
-//            throw new ServicesNotFoundException("Service with ID " +
-//                    servicesId +
-//                    " already assigned to " +
-//                    foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-//            );
-//        foundUserServices.add(Services.builder()
-//                            .id(servicesId)
-//                            .build());
-//        foundUser.get().setServices(foundUserServices);
-//
-//        return userRepository.save(foundUser.get());
-//    }
-//
-//    public User removeExpertFromServices(User user, Long servicesId){
-//        Optional<User> foundUser = userRepository.findByUsername(user.getUsername());
-//        if(foundUser.isEmpty())
-//            throw new UserNotFoundException("User not found.");
-//        if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
-//            throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-//                    + " has not registered as an expert.");
-//        if(!foundUser.get().getExpertStatus().equals(ExpertStatus.APPROVED))
-//            throw new NotApprovedExpertException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-//                    + " has not been approved as expert.");
-//        List<Services> servicesList = servicesService.findAll();
-//        List<Services> foundUserServices = foundUser.get().getServices();
-//        if(!(servicesList.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
-//            throw new ServicesNotFoundException("Service with ID " +
-//                    servicesId +
-//                    " not found."
-//            );
-//        if(!(foundUserServices.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
-//            throw new ServicesNotFoundException("Service with ID " +
-//                    servicesId +
-//                    " has not been assigned to " +
-//                    foundUser.get().getName() + " " + foundUser.get().getFamilyName()
-//            );
-//        foundUserServices.remove((foundUserServices.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).get());
-//        foundUser.get().setServices(foundUserServices);
-//
-//        return userRepository.save(foundUser.get());
-//    }
+    public User addExpertToServices(User user, Long servicesId){
+        Optional<User> foundUser = userRepository.findByUsername(user.getUsername());
+        if(foundUser.isEmpty())
+            throw new UserNotFoundException("User not found.");
+        if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
+                throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+                        + " has not registered as an expert.");
+        if(!foundUser.get().getExpertStatus().equals(ExpertStatus.APPROVED))
+                    throw new NotApprovedExpertException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+                            + " has not been approved as expert."
+                    );
+        List<Subservices> servicesList = subservicesService.findAll();
+        List<Subservices> foundUserServices = foundUser.get().getSubservices();
+        if(!(servicesList.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
+            throw new ServicesNotFoundException("Service with ID " +
+                    servicesId +
+                    " not found."
+                        );
+
+        if((foundUserServices.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
+            throw new ServicesNotFoundException("Service with ID " +
+                    servicesId +
+                    " already assigned to " +
+                    foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+            );
+        foundUserServices.add(Subservices.builder()
+                            .id(servicesId)
+                            .build());
+        foundUser.get().setSubservices(foundUserServices);
+
+        return userRepository.save(foundUser.get());
+    }
+
+    public User removeExpertFromServices(User user, Long servicesId){
+        Optional<User> foundUser = userRepository.findByUsername(user.getUsername());
+        if(foundUser.isEmpty())
+            throw new UserNotFoundException("User not found.");
+        if(!foundUser.get().getUserRole().equals(UserRole.EXPERT))
+            throw new NotExpertUserException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+                    + " has not registered as an expert.");
+        if(!foundUser.get().getExpertStatus().equals(ExpertStatus.APPROVED))
+            throw new NotApprovedExpertException(foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+                    + " has not been approved as expert.");
+        List<Subservices> servicesList = subservicesService.findAll();
+        List<Subservices> foundUserServices = foundUser.get().getSubservices();
+        if(!(servicesList.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
+            throw new ServicesNotFoundException("Service " +
+                    servicesId +
+                    " not found."
+            );
+        if(!(foundUserServices.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).isPresent())
+            throw new ServicesNotFoundException("Service " +
+                     subservicesService.findById(servicesId).getSubserviceTitle() +
+                    " has not been assigned to " +
+                    foundUser.get().getName() + " " + foundUser.get().getFamilyName()
+            );
+        foundUserServices.remove((foundUserServices.stream().filter(t -> Objects.equals(t.getId(), servicesId)).findFirst()).get());
+        foundUser.get().setSubservices(foundUserServices);
+
+        return userRepository.save(foundUser.get());
+    }
 
 
     public List<User> searchForClientOrExpert(UserRole userRole){
@@ -196,21 +216,21 @@ public class UserService {
     }
 
     public List<User> searchForName(String name){
-        List<User> users = userRepository.findAllByNameContaining(name);
+        List<User> users = userRepository.findAllByNameContainingIgnoreCase(name.toLowerCase());
         if(users.isEmpty())
             throw new NoUserFoundException("No user found.");
         return users;
     }
 
     public List<User> searchForFamilyName(String familyName){
-        List<User> users = userRepository.findAllByFamilyNameContaining(familyName);
+        List<User> users = userRepository.findAllByFamilyNameContainingIgnoreCase(familyName);
         if(users.isEmpty())
             throw new NoUserFoundException("No user found.");
         return users;
     }
 
     public List<User> searchForEmail(String email){
-        List<User> users = userRepository.findAllByEmailContaining(email);
+        List<User> users = userRepository.findAllByEmailContainingIgnoreCase(email);
         if(users.isEmpty())
             throw new NoUserFoundException("No user found.");
         return users;
@@ -229,8 +249,8 @@ public class UserService {
             throw new UserNotFoundException("User not found.");
 
         List<User> usersHavingExpertise = users.stream()
-                .filter(u -> u.getServices().stream()
-                                .anyMatch(us -> (us.getServiceTitle().toLowerCase().contains(expertise.toLowerCase())
+                .filter(u -> u.getSubservices().stream()
+                                .anyMatch(us -> (us.getSubserviceTitle().toLowerCase().contains(expertise.toLowerCase())
                                         || us.getSubserviceTitle().toLowerCase().contains(expertise.toLowerCase())))
                         ).collect(Collectors.toList());
         if(usersHavingExpertise.isEmpty())
@@ -257,5 +277,30 @@ public class UserService {
         FileUploadUtil.saveFile(uploadDir, fileName, imageFile);
 
     }
+
+    public boolean activateAccount(Long userId){
+        Optional<User> user = userRepository.findById(userId);
+        if(user.get().isActive())
+            throw new AlreadyActivatedAccountException("Account is already activated.");
+
+        if(userRepository.existsByEmail(user.get().getTempEmail()))
+            throw new DuplicateEmailException("Email already exists.");
+
+        user.get().setActive(true);
+        if(user.get().getUserRole().equals(UserRole.EXPERT))
+            user.get().setExpertStatus(ExpertStatus.PENDING_APPROVAL);
+        user.get().setEmail(user.get().getTempEmail());
+
+        User activatedUser = userRepository.save(user.get());
+        if(
+                (activatedUser.getUserRole().equals(UserRole.CLIENT) && activatedUser.isActive()) ||
+                (activatedUser.getUserRole().equals(UserRole.EXPERT) && activatedUser.isActive() && activatedUser.getExpertStatus().equals(ExpertStatus.PENDING_APPROVAL) )
+        )
+            return true;
+        else
+            return false;
+    }
+
+
 
 }

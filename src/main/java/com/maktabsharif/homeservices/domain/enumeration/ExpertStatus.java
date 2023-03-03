@@ -1,7 +1,7 @@
 package com.maktabsharif.homeservices.domain.enumeration;
 
 public enum ExpertStatus {
-    NEW("New"), APPROVED("Approved"), PENDING_APPROVAL("Pending approval");
+    NEW("New"), PENDING_APPROVAL("Pending approval"), APPROVED("Approved");
 
     private final String toString;
 

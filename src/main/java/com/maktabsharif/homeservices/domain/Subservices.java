@@ -9,22 +9,34 @@ import org.hibernate.annotations.LazyCollectionOption;
 import java.util.List;
 
 @Entity
-@Table(name = "services")
+@Table(name = "subservices")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Services {
+public class Subservices {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
     private Long id;
-    @Column(name = "service_title", unique = true)
-    private String serviceTitle;
+    @Column(name = "subservice_title")
+    private String subserviceTitle;
+    @Column(name = "base_price")
+    private Double basePrice;
+    @Column(name = "description")
+    private String description;
+
+    @ManyToOne
+    Services services;
 
     @LazyCollection(LazyCollectionOption.FALSE)
-    @OneToMany(mappedBy = "services", cascade = CascadeType.MERGE/*, fetch = FetchType.LAZY*/)
-     List<Subservices> subservices;
+    @ManyToMany(mappedBy = "subservices")
+     List<User> user;
+
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(mappedBy = "subservices", cascade = CascadeType.MERGE/*, fetch = FetchType.LAZY*/)
+     List<Orders> orders;
+
 }

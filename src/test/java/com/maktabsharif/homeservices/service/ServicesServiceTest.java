@@ -1,7 +1,7 @@
 package com.maktabsharif.homeservices.service;
 
 import com.maktabsharif.homeservices.domain.Services;
-import com.maktabsharif.homeservices.domain.User;
+import com.maktabsharif.homeservices.domain.Subservices;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -9,118 +9,78 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ServicesServiceTest {
 
     @Autowired
-    private ServicesService servicesService;
+    ServicesService servicesService;
 
     Services services = Services.builder()
-            .serviceTitle("Audio Video")
-            .subserviceTitle("TV")
-            .basePrice(1000d)
-            .description("new TV")
+            .serviceTitle("Home appliance")
             .build();
 
     @Test
     @Order(1)
-    void create() throws Exception {
-
+    void create() {
         servicesService.create(services);
-        if(services.getSubserviceTitle() == null){
-            Services foundService = servicesService.findByServiceTitle(services.getServiceTitle());
-            assertNotNull(foundService);
-        }else{
-            Services foundSubservice = servicesService.findBySubserviceTitle(services.getSubserviceTitle());
-            assertNotNull(foundSubservice);
-
-        }
-
+        Services foundService = servicesService.findByServiceTitle(services.getServiceTitle());
+        assertNotNull(foundService);
     }
 
     @Test
     @Order(2)
+    void findById() {
+        Services foundServiceByServiceTitle = servicesService.findByServiceTitle(services.getServiceTitle());
+        Services foundServiceById = servicesService.findById(foundServiceByServiceTitle.getId());
+        assertNotNull(foundServiceById);
+    }
+
+    @Test@Order(3)
     void findByServiceTitle() {
         Services foundService = servicesService.findByServiceTitle(services.getServiceTitle());
         assertNotNull(foundService);
     }
 
     @Test
-    @Order(3)
-    void findBySubserviceTitle() {
-        Services foundService = servicesService.findBySubserviceTitle(services.getSubserviceTitle());
-        assertNotNull(foundService);
-    }
-
-    @Test
     @Order(4)
-    void findByServiceTitleAndSubserviceTitle() {
-        Services foundService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
-        assertNotNull(foundService);
+    void findAll() {
+        assertEquals(servicesService.findAll().size(), 1);
     }
 
     @Test
     @Order(5)
-    void findById() {
-        Services foundServiceByServiceTitle = servicesService.findByServiceTitle(services.getServiceTitle());
-        Services foundServiceByServiceId = servicesService.findById(foundServiceByServiceTitle.getId());
-        assertNotNull(foundServiceByServiceId);
+    void edit() {
+        Services underEditionService = servicesService.findByServiceTitle(services.getServiceTitle());
+
+        String newServiceTitle = "All Tv 1";
+        Services editedService = servicesService.edit(underEditionService.getId(), newServiceTitle);
+        assertTrue(editedService.getServiceTitle().equals(newServiceTitle));
+    }
+
+
+
+    @Test
+    void update() {
+        Services underUpdateService = servicesService.findByServiceTitle(services.getServiceTitle());
+
+        underUpdateService.setServiceTitle("new service");
+        Services updatedService = servicesService.update(underUpdateService);
+        assertTrue(updatedService.getServiceTitle().equals("new service"));
     }
 
     @Test
     @Order(6)
-    void findAll() {
-        List<Services> services = servicesService.findAll();
-        assertEquals(services.size(), 1);
-    }
-
-    @Test
-    @Order(7)
-    void editServices() throws Exception{
-        Services underEditService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
-
-        String newServiceTitle = null;
-        String newSubserviceTitle = "All Tv 1";
-        Double newBasePrice = 2000d;
-        String newDescription = "New all tv";
-        Services editedService = servicesService.editServices(underEditService, newServiceTitle, newSubserviceTitle, newBasePrice, newDescription);
-        assertTrue(
-                (newServiceTitle != null && editedService.getServiceTitle().equals(newServiceTitle) ? true : newServiceTitle == null && editedService.getServiceTitle().equals(underEditService.getServiceTitle()) ? true : false) &&
-                        (newSubserviceTitle != null && editedService.getSubserviceTitle().equals(newSubserviceTitle) ? true : newSubserviceTitle == null && editedService.getSubserviceTitle().equals(underEditService.getSubserviceTitle()) ? true : false) &&
-                        (newBasePrice != null && Objects.equals(editedService.getBasePrice(), newBasePrice) ? true : newBasePrice == null && Objects.equals(editedService.getBasePrice(), underEditService.getBasePrice()) ? true : false) &&
-                        (newDescription != null && editedService.getDescription().equals(newDescription) ? true : newDescription == null && editedService.getDescription().equals(underEditService.getDescription()) ? true : false)
-        );
-    }
-
-    @Test
-    @Order(8)
-    void addExpertToServices() {
-        Services foundService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
-        User assignedToServicesExpert = servicesService.addExpertToServices(foundService.getId(), 1l);
-        assertTrue((assignedToServicesExpert.getServices().stream().filter(t -> Objects.equals(t.getId(), foundService.getId())).findFirst()).isPresent());
-
-    }
-
-    @Test
-    @Order(9)
-    void removeExpertFromServices() {
-        Services foundService = servicesService.findByServiceTitleAndSubserviceTitle(services.getServiceTitle(), services.getSubserviceTitle());
-        User RemovedFromServicesExpert = servicesService.removeExpertFromServices(foundService.getId(), 1l);
-        assertTrue(!(RemovedFromServicesExpert.getServices().stream().filter(t -> Objects.equals(t.getId(), foundService.getId())).findFirst()).isPresent());
-    }
-
-    @Test
-    @Order(10)
     void deleteById() {
-        Services foundService = servicesService.findByServiceTitle(services.getServiceTitle());
-        servicesService.deleteById(foundService.getId());
-        List<Services> allServices = servicesService.findAll();
-        assertEquals(allServices.size(), 0);
+        Services underdeletionService = servicesService.findByServiceTitle(services.getServiceTitle());
+        servicesService.deleteById(underdeletionService.getId());
+        assertEquals(servicesService.findAll().size(), 0);
     }
+
+
+
+
 }

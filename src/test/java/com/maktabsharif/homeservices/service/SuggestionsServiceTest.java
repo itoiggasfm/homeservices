@@ -32,11 +32,10 @@ class SuggestionsServiceTest {
                     .id(1l)
                     .build())
             .expertSuggestion("ready for it")
-            .expertSuggestionDate(new Timestamp(new Date().getTime()))
             .expertSuggestedPrice(3000d)
-            .startDateByExpert(Timestamp.valueOf("2023-2-24 11:53:00"))
+            .startDateByExpert(Timestamp.valueOf("2023-4-24 11:53:00"))
             .orderDoDuration(2)
-            .selecetd(false)
+            .selected(false)
             .build();
 
     @Test
@@ -44,21 +43,21 @@ class SuggestionsServiceTest {
     void create() throws Exception {
         suggestionsService.create(suggestions);
 
-        Suggestions foundSuggestion = suggestionsService.findByUserAndOrders(suggestions.getUser(), suggestions.getOrders());
+        Suggestions foundSuggestion = suggestionsService.findByUserIdAndOrdersId(suggestions.getUser().getId(), suggestions.getOrders().getId());
         assertNotNull(foundSuggestion);
     }
 
     @Test
     @Order(2)
-    void findByUserAndOrders() {
-        Suggestions foundSuggestion = suggestionsService.findByUserAndOrders(suggestions.getUser(), suggestions.getOrders());
+    void findByUserAndOrders() throws Exception {
+        Suggestions foundSuggestion = suggestionsService.findByUserIdAndOrdersId(suggestions.getUser().getId(), suggestions.getOrders().getId());
         assertNotNull(foundSuggestion);
     }
 
     @Test
     @Order(3)
-    void findById() {
-        Suggestions foundSuggestionByUserAndOrder = suggestionsService.findByUserAndOrders(suggestions.getUser(), suggestions.getOrders());
+    void findById() throws Exception {
+        Suggestions foundSuggestionByUserAndOrder = suggestionsService.findByUserIdAndOrdersId(suggestions.getUser().getId(), suggestions.getOrders().getId());
         Suggestions foundSuggestionById = suggestionsService.findById(foundSuggestionByUserAndOrder.getId());
         assertNotNull(foundSuggestionById);
     }
@@ -73,16 +72,11 @@ class SuggestionsServiceTest {
     @Test
     @Order(5)
     void selectSuggestion() throws Exception {
-        Suggestions foundSuggestion = suggestionsService.findByUserAndOrders(suggestions.getUser(), suggestions.getOrders());
+        Suggestions foundSuggestion = suggestionsService.findByUserIdAndOrdersId(suggestions.getUser().getId(), suggestions.getOrders().getId());
         suggestionsService.selectSuggestion(suggestions.getOrders().getId(), foundSuggestion.getId());
         Suggestions selectedSuggestion = suggestionsService.findById(foundSuggestion.getId());
-        assertTrue(selectedSuggestion.getSelecetd());
+        assertTrue(selectedSuggestion.getSelected());
     }
 
-    @Test
-    @Order(6)
-    void findAssignedToExpertOrders() {
-        List<Orders> assignedToExpertOrders = suggestionsService.findAssignedToExpertOrders(4l);
-        assertEquals(assignedToExpertOrders.size(), 1);
-    }
+
 }

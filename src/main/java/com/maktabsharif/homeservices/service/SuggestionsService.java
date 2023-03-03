@@ -9,6 +9,8 @@ import com.maktabsharif.homeservices.repository.SuggestionsRepository;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,18 +21,18 @@ import java.util.stream.Collectors;
 public class SuggestionsService {
 
     private final SuggestionsRepository suggestionsRepository;
-    private final OrdersService orderService;
+    private final OrdersService ordersService;
     private final UserService userService;
 
     public SuggestionsService(SuggestionsRepository suggestionsRepository,
-                              @Lazy OrdersService orderService,
+                              @Lazy OrdersService ordersService,
                               UserService userService) {
         this.suggestionsRepository = suggestionsRepository;
-        this.orderService = orderService;
+        this.ordersService = ordersService;
         this.userService = userService;
     }
 
-    public void create(Suggestions suggestions) throws Exception{
+    public Suggestions create(Suggestions suggestions) throws Exception{
         Optional<Suggestions> foundSuggestion = suggestionsRepository.findByUserAndOrders(suggestions.getUser(), suggestions.getOrders());
 
         if(foundSuggestion.isPresent())
@@ -45,10 +47,10 @@ public class SuggestionsService {
                     + " has not been approved as expert."
             );
 
-        Orders suggestionOrder = orderService.findById(suggestions.getOrders().getId());
-        List<Services> expertServices = suggestionExpert.getServices();
+        Orders suggestionOrder = ordersService.findById(suggestions.getOrders().getId());
+        List<Subservices> expertServices = suggestionExpert.getSubservices();
 
-        if(!expertServices.stream().filter(t -> Objects.equals(t.getId(), suggestionOrder.getServices().getId())).findFirst().isPresent())
+        if(!expertServices.stream().filter(t -> Objects.equals(t.getId(), suggestionOrder.getSubservices().getId())).findFirst().isPresent())
             throw new OrderServiceNotInExpertServices("Order service is not in " +
                     suggestionExpert.getName() + " " + suggestionExpert.getFamilyName() +
                     " services.");
@@ -58,15 +60,21 @@ public class SuggestionsService {
         if(suggestionOrder.getStartDateByClient().after(suggestions.getStartDateByExpert()))
             throw new StartDateByExpertBeforeStartDateByClintException("Start date by expert is before start date by client.");
 
-        suggestionsRepository.save(suggestions);
-
+        suggestions.setExpertSuggestionDate(new Timestamp(new Date().getTime()));
+        suggestions.setSelected(false);
         suggestionOrder.setOrderStatus(OrderStatus.AWAITING_EXPERT_SELECTION);
-        orderService.updateByOrder(suggestionOrder);
+        ordersService.updateByOrder(suggestionOrder);
+
+        return suggestionsRepository.save(suggestions);
+
+
 
     }
 
-    public Suggestions findByUserAndOrders(User user, Orders order){
-        return suggestionsRepository.findByUserAndOrders(user, order)
+    public Suggestions findByUserIdAndOrdersId(Long userId, Long ordersId) throws Exception {
+        User user = userService.findById(userId);
+        Orders orders = ordersService.findById(ordersId);
+        return suggestionsRepository.findByUserAndOrders(user, orders)
                 .orElseThrow(() -> new SuggestionNotFoundException("Suggestion not found."));
     }
 
@@ -76,45 +84,40 @@ public class SuggestionsService {
                 .orElseThrow(() -> new SuggestionNotFoundException("Suggestion not found."));
     }
 
+    public List<Suggestions> findAll(){
+        return suggestionsRepository.findAll();
+    }
 
-    public List<Suggestions> findOrdersSuggestions(Long orderId) throws Exception {
-        Orders order = orderService.findById(orderId);
+    public void deleteById(Long suggestionsId){
+        suggestionsRepository.deleteById(suggestionsId);
+    }
+    public Suggestions update(Suggestions suggestions){
+        return suggestionsRepository.save(suggestions);
+    }
+
+    public List<Suggestions> findOrdersSuggestions(Long ordersId) throws Exception {
+        Orders order = ordersService.findById(ordersId);
 
         List<Suggestions> suggestions = suggestionsRepository.findAll();
-        List<Suggestions> orderSuggestions = suggestions.stream().filter(s -> Objects.equals(s.getOrders().getId(), orderId)).collect(Collectors.toList());
+        List<Suggestions> orderSuggestions = suggestions.stream()
+                .filter(s -> Objects.equals(s.getOrders().getId(), ordersId))
+                .collect(Collectors.toList());
 
         return orderSuggestions;
     }
 
-
     public void selectSuggestion(Long orderId, Long suggestionId) throws Exception {
 
-        Orders order = orderService.findById(orderId);
+        Orders order = ordersService.findById(orderId);
         Optional<Suggestions> suggestion = suggestionsRepository.findById(suggestionId);
 
-        suggestion.get().setSelecetd(true);
+        suggestion.get().setSelected(true);
         suggestionsRepository.save(suggestion.get());
 
         order.setSelectedSuggestionId(suggestionId);
         order.setOrderStatus(OrderStatus.AWAITING_EXPERT_TO_COME_TO_YOUR_PLACE);
-        orderService.updateByOrder(order);
+        ordersService.updateByOrder(order);
     }
 
-    public List<Orders> findAssignedToExpertOrders(Long expertId){
-        List<Orders> orders = orderService.findAll();
-        if(orders.isEmpty())
-            throw new OrderNotFoundException("Order not found");
-
-        List<Orders> assignedToExpertOrders = orders.stream()
-                .filter(o -> o.getSelectedSuggestionId() != null &&
-                        Objects.equals(suggestionsRepository.findById(o.getSelectedSuggestionId()).get().getUser().getId(), expertId))
-                .collect(Collectors.toList());
-
-        if(assignedToExpertOrders.isEmpty())
-            throw new OrderNotFoundException("Order not found");
-
-        return assignedToExpertOrders;
-
-    }
 
 }
