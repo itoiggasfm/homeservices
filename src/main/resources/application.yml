@@ -11,3 +11,19 @@ spring:
       show-sql: false
   main:
     allow-circular-references: true
+  mail:
+    default-encoding: UTF-8
+    host: smtp.gmail.com
+    username: hasan.rahimi@gmail.com
+    password: rwmunnrcndyhjjvy
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transfer:
+          protocol: smtp
+    test-connection: false

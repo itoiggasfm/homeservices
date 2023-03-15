@@ -22,10 +22,8 @@ public class SubservicesController {
 
     @PostMapping("/create")
     public Subservices create(@RequestBody SubservicesDto subservicesDto) throws Exception {
-//        System.out.println(subservicesDto.getServicesDto().getServiceTitle());
-//        Services services = ServicesMapper.INSTANCE.dtoToModel(subservicesDto.getServicesDto());
+
         Subservices subservices = SubservicesMapper.INSTANCE.dtoToModel(subservicesDto);
-//        subservices.setServices(services);
         return subservicesService.create(subservices);
     }
 

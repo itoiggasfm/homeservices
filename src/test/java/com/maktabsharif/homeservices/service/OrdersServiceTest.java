@@ -1,8 +1,6 @@
 package com.maktabsharif.homeservices.service;
 
-import com.maktabsharif.homeservices.domain.Orders;
-import com.maktabsharif.homeservices.domain.Subservices;
-import com.maktabsharif.homeservices.domain.User;
+import com.maktabsharif.homeservices.domain.*;
 import com.maktabsharif.homeservices.domain.enumeration.OrderStatus;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -25,6 +23,8 @@ class OrdersServiceTest {
     private OrdersService ordersService;
     @Autowired
     private UserService userService;
+    @Autowired
+            private ExpertService expertService;
 
 
     Orders order = Orders.builder()
@@ -32,7 +32,7 @@ class OrdersServiceTest {
             .subservices(Subservices.builder()
                     .id(1l)
                     .build())
-            .user(User.builder()
+            .client(Client.builder()
                     .id(1l)
                     .build())
             .workDescription("New Radio")
@@ -48,7 +48,7 @@ class OrdersServiceTest {
     void create() throws Exception {
         ordersService.create(order);
 
-        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders foundOrder = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
 
         assertNotNull(foundOrder);
     }
@@ -57,14 +57,14 @@ class OrdersServiceTest {
     @Test
     @Order(2)
     void findByUserIdAndServicesId() throws Exception {
-        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders foundOrder = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
         assertNotNull(foundOrder);
     }
 
     @Test
     @Order(3)
     void findById() throws Exception {
-        Orders foundOrderByUserAndServices = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders foundOrderByUserAndServices = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
         Orders foundOrderById = ordersService.findById(foundOrderByUserAndServices.getId());
         assertNotNull(foundOrderById);
     }
@@ -79,8 +79,8 @@ class OrdersServiceTest {
     @Test
     @Order(5)
     void findClientOrders() throws Exception {
-        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
-        List<Orders> clientOrders = ordersService.findClientOrders(foundOrder.getUser().getId());
+        Orders foundOrder = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
+        List<Orders> clientOrders = ordersService.findClientOrders(foundOrder.getClient().getId());
         assertEquals(clientOrders.size(),  1);
 
     }
@@ -88,7 +88,7 @@ class OrdersServiceTest {
     @Test
     @Order(6)
     void findRelatedToExpertOrders() {
-        User expert = userService.findById(1l);
+        Expert expert = expertService.findById(1l);
         List<Orders> relatedToExpertOrders = ordersService.findRelatedToExpertOrders(expert.getSubservices());
         assertEquals(relatedToExpertOrders.size(),  1);
     }
@@ -97,7 +97,7 @@ class OrdersServiceTest {
     @Test
     @Order(7)
     void findSuggestibleByExpertOrders() {
-        User expert = userService.findById(1l);
+        Expert expert = expertService.findById(1l);
         List<Orders> suggestibleByExpertOrders = ordersService.findSuggestibleByExpertOrders(expert.getSubservices());
         assertEquals(suggestibleByExpertOrders.size(),  1);
     }
@@ -112,7 +112,7 @@ class OrdersServiceTest {
     @Test
     @Order(9)
     void changeOrderStatusToStarted() throws Exception {
-        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders foundOrder = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
         Orders changedOrderStatusToStarted = ordersService.changeOrderStatusToStarted(foundOrder.getId());
         assertTrue(changedOrderStatusToStarted.getOrderStatus().equals(OrderStatus.STARTED));
     }
@@ -120,7 +120,7 @@ class OrdersServiceTest {
     @Test
     @Order(10)
     void changeOrderStatusToDone() throws Exception {
-        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
+        Orders foundOrder = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
         Orders changedOrderStatusToDone = ordersService.changeOrderStatusToDone(foundOrder.getId());
         assertTrue(changedOrderStatusToDone.getOrderStatus().equals(OrderStatus.DONE));
 
@@ -129,8 +129,8 @@ class OrdersServiceTest {
     @Test
     @Order(11)
     void changeOrderStatusToPaid() throws Exception {
-        Orders foundOrder = ordersService.findByUserIdAndServicesId(order.getUser().getId(), order.getSubservices().getId());
-        Orders changedOrderStatusToPiad = ordersService.changeOrderStatusToPaidByCredit(foundOrder.getId());
+        Orders foundOrder = ordersService.findByClientAndSubservicesAndOrderStatusNot(order);
+        Orders changedOrderStatusToPiad = ordersService.changeOrderStatusToPaid(foundOrder.getId());
         assertTrue(changedOrderStatusToPiad.getOrderStatus().equals(OrderStatus.PAID));
     }
 

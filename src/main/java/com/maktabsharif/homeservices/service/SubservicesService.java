@@ -3,9 +3,6 @@ package com.maktabsharif.homeservices.service;
 import com.maktabsharif.homeservices.Exceptions.*;
 import com.maktabsharif.homeservices.domain.Services;
 import com.maktabsharif.homeservices.domain.Subservices;
-import com.maktabsharif.homeservices.domain.User;
-import com.maktabsharif.homeservices.domain.enumeration.ExpertStatus;
-import com.maktabsharif.homeservices.domain.enumeration.UserRole;
 import com.maktabsharif.homeservices.repository.SubservicesRepository;
 import org.springframework.stereotype.Service;
 

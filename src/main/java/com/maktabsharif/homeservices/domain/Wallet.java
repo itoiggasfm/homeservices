@@ -31,7 +31,6 @@ public class Wallet{
             fetch = FetchType.EAGER*/)
     private List<Transactions> transaction;
 
-
     @OneToOne(mappedBy = "wallet")
     private User user;
 

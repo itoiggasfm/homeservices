@@ -6,20 +6,12 @@ public class Validators {
 
 
 
-    //validating number
-    public boolean validateNumber(String number){
-        if(Pattern.compile("\\d{1}").matcher(number).matches())
-            return true;
-        else
-            return false;
-    }
 
     //validating number
     public boolean validateEmail(String email){
         if(Pattern.compile("^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$").matcher(email).matches())
             return true;
         else{
-//            System.out.println("Invalid Email address.");
             return false;
         }
 

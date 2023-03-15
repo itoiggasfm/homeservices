@@ -1,5 +1,6 @@
 package com.maktabsharif.homeservices.repository;
 
+import com.maktabsharif.homeservices.domain.Expert;
 import com.maktabsharif.homeservices.domain.Orders;
 import com.maktabsharif.homeservices.domain.Suggestions;
 import com.maktabsharif.homeservices.domain.User;
@@ -9,6 +10,6 @@ import java.util.Optional;
 
 public interface SuggestionsRepository extends JpaRepository<Suggestions, Long> {
 
-    Optional<Suggestions> findByUserAndOrders(User user, Orders orders);
+    Optional<Suggestions> findByExpertAndOrders(Expert expert, Orders orders);
 
 }

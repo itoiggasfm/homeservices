@@ -14,7 +14,6 @@ public class TransactionController {
 
     @PostMapping("/create")
     public String create(@Valid @ModelAttribute TransactionDto transactionDto) throws Exception {
-//        System.out.println(transactionDto.toString());
         transactionDto.setSrvCaptcha(srvCaptcha);
         System.out.println("Source card number: " + transactionDto.getSrcCardNumber());
         System.out.println("Destination card number: " + transactionDto.getDestCardNumber());

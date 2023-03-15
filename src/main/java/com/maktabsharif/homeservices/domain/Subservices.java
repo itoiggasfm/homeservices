@@ -21,10 +21,13 @@ public class Subservices {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
     private Long id;
+
     @Column(name = "subservice_title")
     private String subserviceTitle;
+
     @Column(name = "base_price")
     private Double basePrice;
+
     @Column(name = "description")
     private String description;
 
@@ -33,7 +36,7 @@ public class Subservices {
 
     @LazyCollection(LazyCollectionOption.FALSE)
     @ManyToMany(mappedBy = "subservices")
-     List<User> user;
+     List<Expert> exprt;
 
     @LazyCollection(LazyCollectionOption.FALSE)
     @OneToMany(mappedBy = "subservices", cascade = CascadeType.MERGE/*, fetch = FetchType.LAZY*/)

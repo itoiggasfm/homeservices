@@ -6,6 +6,7 @@ import com.maktabsharif.homeservices.domain.enumeration.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
@@ -25,28 +26,37 @@ public class Orders {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
     private Long id;
+
     @Column(name = "work_description")
     private String workDescription;
+
     @Column(name = "client_suggested_price")
     private Double clientSuggestedPrice;
+
     @Column(name = "order_date")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss"/*, timezone = "Asia/Tehran"*/)
+    @CreationTimestamp
     private Timestamp orderDate;
+
     @Column(name = "start_date_by_client")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss"/*, timezone = "Asia/Tehran"*/)
     private Timestamp startDateByClient;
+
     @Column(name = "address")
     private String address;
+
     @Column(name = "order_status")
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
+
     @Column(name = "comment")
     private String comment;
+
     @Column(name = "selected_suggestion_id")
     private Long selectedSuggestionId;
 
 
     @ManyToOne(cascade = CascadeType.MERGE/*, fetch = FetchType.LAZY*/)
-    private User user;
+    private Client client;
 
     @LazyCollection(LazyCollectionOption.FALSE)
     @OneToMany(mappedBy = "orders")
